@@ -52,20 +52,20 @@ export default function Home() {
   }
 
   return (
-    <main className='min-h-dvh flex items-center justify-center p-6 relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100'>
+    <main className='min-h-dvh flex items-center justify-center p-6 relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100'>
       {/* Rain Effect */}
       <Rain showRain={showRain} />
       
-      {/* Background Teardrops */}
-      <TeardropSVG className="absolute top-20 left-20 opacity-10 rotate-12 z-1" />
-      <TeardropSVG className="absolute bottom-32 right-16 opacity-5 scale-50 -rotate-45" fill="rgba(99, 102, 241, 0.1)" />
-      <TeardropSVG className="absolute top-1/2 left-10 opacity-8 scale-75 rotate-90" fill="rgba(139, 92, 246, 0.08)" />
-      <TeardropSVG className="absolute top-1/3 right-1/3 opacity-5 scale-60 -rotate-12" fill="rgba(59, 130, 246, 0.12)" />
+      {/* Background Teardrops - Minimal gray tones */}
+      <TeardropSVG className="absolute top-20 left-20 opacity-5 rotate-12 z-1" fill="rgba(156, 163, 175, 0.1)" />
+      <TeardropSVG className="absolute bottom-32 right-16 opacity-3 scale-50 -rotate-45" fill="rgba(209, 213, 219, 0.08)" />
+      <TeardropSVG className="absolute top-1/2 left-10 opacity-4 scale-75 rotate-90" fill="rgba(243, 244, 246, 0.12)" />
+      <TeardropSVG className="absolute top-1/3 right-1/3 opacity-3 scale-60 -rotate-12" fill="rgba(156, 163, 175, 0.06)" />
       
-      <div className='w-full max-w-md space-y-4 relative z-20'>
-        <h1 className='text-2xl font-semibold text-center'>Receive a Blessing</h1>
+      <div className='w-full max-w-md space-y-6 relative z-20'>
+        <h1 className='text-3xl font-light text-center text-gray-800 tracking-wide'>Receive a Blessing</h1>
         
-        <form onSubmit={onSubmit} className='space-y-3'>
+        <form onSubmit={onSubmit} className='space-y-4'>
           <input
             inputMode='numeric'
             pattern='\d{4}'
@@ -76,24 +76,24 @@ export default function Home() {
               setCode(newCode)
             }}
             placeholder='Enter 4-digit code'
-            className='w-full rounded-lg border px-3 py-2 bg-white/80 backdrop-blur-sm'
+            className='w-full rounded-lg border border-gray-200 px-4 py-3 bg-white/90 backdrop-blur-sm focus:border-gray-300 focus:ring-2 focus:ring-gray-200 transition-all text-gray-700 placeholder:text-gray-400'
           />
           <button
             type='submit'
             disabled={loading}
-            className='w-full rounded-lg bg-black text-white py-2 disabled:opacity-60 hover:bg-gray-800 transition-colors'
+            className='w-full rounded-lg bg-gray-800 text-white py-3 font-medium disabled:opacity-60 hover:bg-gray-700 transition-all shadow-md hover:shadow-lg'
           >
-            {loading ? 'Blessing…' : 'Get Blessing'}
+            {loading ? 'Receiving Blessing...' : 'Receive Blessing'}
           </button>
         </form>
 
-        {error && <p className='text-red-600 text-sm'>{error}</p>}
+        {error && <p className='text-red-600 text-sm bg-red-50 p-3 rounded-lg border border-red-100'>{error}</p>}
         
         {blessing && (
-          <div className='prose prose-sm max-w-none text-gray-800 rounded-lg border p-4 bg-white/90 backdrop-blur-sm shadow-sm'>
+          <div className='rounded-lg border border-gray-200 p-6 bg-white/95 backdrop-blur-sm shadow-lg'>
             <ReactMarkdown
               components={{
-                p: ({ children }) => <p className='mb-2 last:mb-0 leading-relaxed'>{children}</p>,
+                p: ({ children }) => <p className='mb-3 last:mb-0 leading-relaxed text-gray-800 text-base'>{children}</p>,
                 strong: ({ children }) => <strong className='font-semibold text-gray-900'>{children}</strong>,
                 em: ({ children }) => <em className='italic text-gray-700'>{children}</em>,
               }}
