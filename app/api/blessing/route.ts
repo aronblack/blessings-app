@@ -18,6 +18,22 @@ const supabase =
       )
     : null
 
+async function getPrompt(): Promise<string> {
+  if (!supabase) {
+    return `Return a short, warm blessing (2–3 sentences) personalized by this code: {code}.
+Keep it non-denominational, uplifting, and safe for all audiences.`
+  }
+
+  const { data } = await supabase
+    .from('prompts')
+    .select('content')
+    .eq('active', true)
+    .single()
+
+  return data?.content || `Return a short, warm blessing (2–3 sentences) personalized by this code: {code}.
+Keep it non-denominational, uplifting, and safe for all audiences.`
+}
+
 export async function POST(req: NextRequest) {
   try {
     if (!openai) {
@@ -31,8 +47,8 @@ export async function POST(req: NextRequest) {
     const { code } = bodySchema.parse(json)
 
     const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-    const prompt = `Return a short, warm blessing (2–3 sentences) personalized by this code: ${code}.
-Keep it non-denominational, uplifting, and safe for all audiences.`
+    const promptTemplate = await getPrompt()
+    const prompt = promptTemplate.replace('{code}', code)
 
     const completion = await openai.chat.completions.create({
       model,
