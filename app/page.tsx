@@ -8,7 +8,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const onSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(null)
     setBlessing(null)
@@ -25,11 +25,16 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code })
       })
-      const data = await res.json()
+      const contentType = res.headers.get('content-type') || ''
+      if (!contentType.includes('application/json')) {
+        throw new Error(`Unexpected response (${res.status})`)
+      }
+      const data: { blessing?: string; error?: string } = await res.json()
       if (!res.ok) throw new Error(data.error || 'Something went wrong')
-      setBlessing(data.blessing)
-    } catch (err: any) {
-      setError(err.message)
+      setBlessing(data.blessing ?? null)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Something went wrong'
+      setError(msg)
     } finally {
       setLoading(false)
     }

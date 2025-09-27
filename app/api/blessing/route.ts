@@ -1,4 +1,4 @@
-export const runtime = 'nodejs' // ensure Node runtime on Vercel (not Edge)
+export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
@@ -33,7 +33,8 @@ Keep it non-denominational, uplifting, and safe for all audiences.`
     if (supabase) await supabase.from('blessings').insert({ code, blessing: text })
 
     return NextResponse.json({ blessing: text })
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || 'Invalid request' }, { status: 400 })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Invalid request'
+    return NextResponse.json({ error: message }, { status: 400 })
   }
 }
