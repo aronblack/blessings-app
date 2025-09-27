@@ -90,10 +90,10 @@ export default function Home() {
         {error && <p className='text-red-600 text-sm'>{error}</p>}
         
         {blessing && (
-          <div className='rounded-lg border p-4 bg-white/90 backdrop-blur-sm shadow-sm'>
+          <div className='prose prose-sm max-w-none text-gray-800 rounded-lg border p-4 bg-white/90 backdrop-blur-sm shadow-sm'>
             <ReactMarkdown
               components={{
-                p: ({ children }) => <p className='prose prose-sm max-w-none text-gray-800 mb-2 last:mb-0 leading-relaxed'>{children}</p>,
+                p: ({ children }) => <p className='mb-2 last:mb-0 leading-relaxed'>{children}</p>,
                 strong: ({ children }) => <strong className='font-semibold text-gray-900'>{children}</strong>,
                 em: ({ children }) => <em className='italic text-gray-700'>{children}</em>,
               }}
