@@ -25,9 +25,14 @@ export async function POST(req: NextRequest) {
     const prompt = `Return a short, warm blessing (2–3 sentences) personalized by this code: ${code}.
 Keep it non-denominational, uplifting, and safe for all audiences.`
 
-    const completion = await openai.responses.create({ model, input: prompt })
-    const text =
-      completion.output_text?.trim() ||
+    const completion = await openai.chat.completions.create({
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 100,
+      temperature: 0.7
+    })
+
+    const text = completion.choices[0]?.message?.content?.trim() ||
       'May your day be light, your steps steady, and your heart at ease.'
 
     if (supabase) await supabase.from('blessings').insert({ code, blessing: text })
