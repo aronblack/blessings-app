@@ -6,7 +6,9 @@ import { z } from 'zod'
 import { createClient } from '@supabase/supabase-js'
 
 const bodySchema = z.object({ code: z.string().regex(/^\d{4}$/) })
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const openai = process.env.OPENAI_API_KEY 
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null
 
 const supabase =
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -18,6 +20,13 @@ const supabase =
 
 export async function POST(req: NextRequest) {
   try {
+    if (!openai) {
+      return NextResponse.json(
+        { error: 'OpenAI API key not configured' }, 
+        { status: 500 }
+      )
+    }
+
     const json = await req.json()
     const { code } = bodySchema.parse(json)
 
@@ -39,6 +48,7 @@ Keep it non-denominational, uplifting, and safe for all audiences.`
 
     return NextResponse.json({ blessing: text })
   } catch (err: unknown) {
+    console.error('API Error:', err)
     const message = err instanceof Error ? err.message : 'Invalid request'
     return NextResponse.json({ error: message }, { status: 400 })
   }
