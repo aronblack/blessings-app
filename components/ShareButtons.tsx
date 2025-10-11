@@ -6,14 +6,48 @@ interface ShareButtonsProps {
   blessing: string
 }
 
+declare global {
+  interface Window {
+    FB?: {
+      init: (params: { appId: string; cookie: boolean; xfbml: boolean; version: string }) => void
+      ui: (params: { method: string; href: string; quote?: string }, callback?: (response: { [key: string]: unknown; status: string }) => void) => void
+    }
+  }
+}
+
 export default function ShareButtons({ blessing }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false)
   const [shareUrl, setShareUrl] = useState('')
+  const [isClient, setIsClient] = useState(false)
+  const [fbLoaded, setFbLoaded] = useState(false)
   
   useEffect(() => {
-    // Get the current URL on client side
-    if (typeof window !== 'undefined') {
-      setShareUrl(window.location.href)
+    setIsClient(true)
+    setShareUrl(window.location.href)
+    
+    // Load Facebook SDK
+    if (!window.FB && !document.getElementById('facebook-jssdk')) {
+      const script = document.createElement('script')
+      script.id = 'facebook-jssdk'
+      script.src = 'https://connect.facebook.net/en_US/sdk.js'
+      script.async = true
+      script.defer = true
+      
+      script.onload = () => {
+        if (window.FB) {
+          window.FB.init({
+            appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || 'YOUR_DEFAULT_APP_ID',
+            cookie: true,
+            xfbml: true,
+            version: 'v18.0'
+          })
+          setFbLoaded(true)
+        }
+      }
+      
+      document.head.appendChild(script)
+    } else if (window.FB) {
+      setFbLoaded(true)
     }
   }, [])
 
@@ -30,10 +64,25 @@ export default function ShareButtons({ blessing }: ShareButtonsProps) {
     }
   }
 
-  // Use Facebook's simple sharer (no SDK needed)
   const shareOnFacebook = () => {
-    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`
-    window.open(facebookUrl, 'facebook-share-dialog', 'width=626,height=436')
+    if (window.FB && fbLoaded) {
+      // Use Facebook Share Dialog with feed method to include message
+      window.FB.ui({
+        method: 'feed',
+        href: shareUrl,
+        quote: `${shareText}`,
+      }, function(response: { [key: string]: unknown; status: string }) {
+        if (response && !('error_code' in response)) {
+          console.log('Post was shared successfully.')
+        } else {
+          console.log('Error occurred while sharing.')
+        }
+      })
+    } else {
+      // Fallback - open a new post with pre-filled text
+      const facebookUrl = `https://www.facebook.com/intent/post/?text=${encodeURIComponent(fullShareText)}`
+      window.open(facebookUrl, '_blank', 'width=626,height=436')
+    }
   }
 
   const shareOnTwitter = () => {
@@ -52,15 +101,6 @@ export default function ShareButtons({ blessing }: ShareButtonsProps) {
     window.open(url, 'linkedin-share-dialog', 'width=626,height=436')
   }
 
-  // Don't render until we have the URL
-  if (!shareUrl) {
-    return (
-      <div className="mt-4 pt-4 border-t border-gray-100">
-        <p className="text-sm text-gray-600 mb-3 text-center">Loading share options...</p>
-      </div>
-    )
-  }
-
   return (
     <div className="mt-4 pt-4 border-t border-gray-100">
       <p className="text-sm text-gray-600 mb-3 text-center">Share this blessing</p>
@@ -69,7 +109,8 @@ export default function ShareButtons({ blessing }: ShareButtonsProps) {
         {/* Facebook */}
         <button
           onClick={shareOnFacebook}
-          className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md transform hover:scale-105 text-sm"
+          disabled={!isClient || !shareUrl}
+          className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md transform hover:scale-105 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Share on Facebook"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -81,7 +122,8 @@ export default function ShareButtons({ blessing }: ShareButtonsProps) {
         {/* Twitter/X */}
         <button
           onClick={shareOnTwitter}
-          className="flex items-center gap-2 px-3 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-all shadow-sm hover:shadow-md transform hover:scale-105 text-sm"
+          disabled={!isClient || !shareUrl}
+          className="flex items-center gap-2 px-3 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-all shadow-sm hover:shadow-md transform hover:scale-105 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Share on Twitter/X"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -93,7 +135,8 @@ export default function ShareButtons({ blessing }: ShareButtonsProps) {
         {/* WhatsApp */}
         <button
           onClick={shareOnWhatsApp}
-          className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-sm hover:shadow-md transform hover:scale-105 text-sm"
+          disabled={!isClient || !shareUrl}
+          className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-sm hover:shadow-md transform hover:scale-105 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Share on WhatsApp"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -105,7 +148,8 @@ export default function ShareButtons({ blessing }: ShareButtonsProps) {
         {/* LinkedIn */}
         <button
           onClick={shareOnLinkedIn}
-          className="flex items-center gap-2 px-3 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-all shadow-sm hover:shadow-md transform hover:scale-105 text-sm"
+          disabled={!isClient || !shareUrl}
+          className="flex items-center gap-2 px-3 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-all shadow-sm hover:shadow-md transform hover:scale-105 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Share on LinkedIn"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -117,7 +161,8 @@ export default function ShareButtons({ blessing }: ShareButtonsProps) {
         {/* Copy to clipboard */}
         <button
           onClick={handleCopy}
-          className="flex items-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all shadow-sm hover:shadow-md transform hover:scale-105 text-sm"
+          disabled={!isClient || !shareUrl}
+          className="flex items-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all shadow-sm hover:shadow-md transform hover:scale-105 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Copy to clipboard"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -127,10 +172,12 @@ export default function ShareButtons({ blessing }: ShareButtonsProps) {
         </button>
       </div>
       
-      {/* Debug info - remove this later */}
-      <div className="mt-2 text-xs text-gray-400 text-center break-all">
-        URL: {shareUrl}
-      </div>
+      {/* Show URL only after hydration */}
+      {isClient && shareUrl && (
+        <div className="mt-2 text-xs text-gray-400 text-center break-all">
+          URL: {shareUrl}
+        </div>
+      )}
     </div>
   )
 }

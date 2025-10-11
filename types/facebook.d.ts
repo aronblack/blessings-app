@@ -1,6 +1,6 @@
 declare global {
   interface Window {
-    FB: {
+    FB?: {
       init: (params: {
         appId: string
         cookie: boolean
@@ -13,7 +13,7 @@ declare global {
           href: string
           quote?: string
         },
-        callback?: (response: any) => void
+        callback?: (response: { status: string; [key: string]: unknown }) => void
       ) => void
     }
   }

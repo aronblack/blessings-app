@@ -9,22 +9,22 @@ export const metadata: Metadata = {
   description: "Receive personalized daily blessings to inspire and uplift your spirit.",
   metadataBase: new URL(process.env.NODE_ENV === 'production' ? 'https://your-domain.com' : 'http://localhost:3000'),
   openGraph: {
-    title: "Daily Blessings - Receive a Blessing",
-    description: "Receive personalized daily blessings to inspire and uplift your spirit.",
+    title: "Daily Blessings - Get Your Personalized Blessing ✨",
+    description: "Discover beautiful, personalized blessings to inspire and uplift your spirit. Get your daily dose of positivity and share it with loved ones.",
     type: "website",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "/og-image.jpg", // Make sure this exists in your public folder
         width: 1200,
         height: 630,
-        alt: "Daily Blessings App",
+        alt: "Daily Blessings - Personalized spiritual messages",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Daily Blessings - Receive a Blessing",
-    description: "Receive personalized daily blessings to inspire and uplift your spirit.",
+    title: "Daily Blessings - Get Your Personalized Blessing ✨",
+    description: "Discover beautiful, personalized blessings to inspire and uplift your spirit.",
     images: ["/og-image.jpg"],
   },
 };
