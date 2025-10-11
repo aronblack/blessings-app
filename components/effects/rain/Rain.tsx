@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 
-const RainDrop = ({ delay, left, id }: { delay: number; left: string; id: number }) => {
+const RainDrop = ({ delay, left }: { delay: number; left: string; id: number }) => {
   return (
     <div 
       className="absolute rain-drop opacity-60 z-0"
@@ -31,12 +31,19 @@ interface RainProps {
   showRain: boolean
 }
 
+// Create a seeded random number generator for consistent results
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed) * 10000
+  return x - Math.floor(x)
+}
+
 export default function Rain({ showRain }: RainProps) {
-  // Memoize rain drops so they don't recreate on every render
+  // Use a consistent seed to generate the same raindrops every time
   const rainDrops = useMemo(() => {
     return Array.from({ length: 30 }, (_, i) => {
-      const delay = Math.random() * 3
-      const left = `${Math.random() * 100}%`
+      // Use the index as seed to get consistent values
+      const delay = seededRandom(i * 100) * 3
+      const left = `${seededRandom(i * 200) * 100}%`
       return {
         id: i,
         delay,
