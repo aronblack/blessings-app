@@ -43,3 +43,52 @@ body {
 .rain-drop {
   animation: rain-fall 3s linear infinite;
 }
+
+/* Hell effect */
+@keyframes devil-slide {
+  0% { transform: translate(-50%, -150%); opacity: 0 }
+  60% { opacity: 1 }
+  100% { transform: translate(-50%, 0); opacity: 1 }
+}
+
+@keyframes fire-flicker {
+  0%, 100% { transform: translateY(0) scaleY(1); filter: brightness(1) }
+  50% { transform: translateY(-10px) scaleY(1.05); filter: brightness(1.15) }
+}
+
+/* Devil dancer should start off-screen at the top center */
+.devil-drop {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -150%);
+  animation: devil-slide 0.9s ease-out forwards;
+  pointer-events: none;
+  /* Optional if you’re not setting z-index via Tailwind on the element */
+  /* z-index: 20; */
+}
+
+/* Fire should be a fixed bar rising from the bottom */
+.hell-fire {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 35vh;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 120% at 50% 100%, rgba(255,120,0,0.6), transparent 60%),
+    radial-gradient(50% 120% at 20% 100%, rgba(255,60,0,0.7), transparent 60%),
+    radial-gradient(50% 120% at 80% 100%, rgba(255,60,0,0.7), transparent 60%),
+    linear-gradient(to top, rgba(255,80,0,0.5), transparent);
+  filter: blur(1px);
+  animation: fire-flicker 1.2s ease-in-out infinite;
+  /* Optional if you’re not setting z-index via Tailwind on the element */
+  /* z-index: 10; */
+}
+
+/* Avoid possible iframe borders */
+.hell-video iframe {
+  border: 0;
+  pointer-events: none;
+}

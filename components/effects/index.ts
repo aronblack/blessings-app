@@ -5,3 +5,6 @@ export { Rain, TeardropSVG } from './rain'
 // export { Sun, Cloud } from './sunny'
 // export { Moon, Stars } from './night'
 // export { Clouds, Fog } from './cloudy'
+
+// Language: ts
+export { Hell } from './hell'

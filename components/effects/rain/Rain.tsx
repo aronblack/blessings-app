@@ -1,8 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
-
-const RainDrop = ({ delay, left }: { delay: number; left: string; id: number }) => {
+const RainDrop = ({ delay, left, id }: { delay: number; left: string; id: number }) => {
   return (
     <div 
       className="absolute rain-drop opacity-60 z-0"
@@ -31,26 +29,21 @@ interface RainProps {
   showRain: boolean
 }
 
-// Create a seeded random number generator for consistent results
-function seededRandom(seed: number): number {
-  const x = Math.sin(seed) * 10000
-  return x - Math.floor(x)
-}
-
 export default function Rain({ showRain }: RainProps) {
-  // Use a consistent seed to generate the same raindrops every time
-  const rainDrops = useMemo(() => {
-    return Array.from({ length: 30 }, (_, i) => {
-      // Use the index as seed to get consistent values
-      const delay = seededRandom(i * 100) * 3
-      const left = `${seededRandom(i * 200) * 100}%`
-      return {
-        id: i,
-        delay,
-        left
-      }
-    })
-  }, []) // Empty dependency array - only create once on mount
+  // Fixed array of raindrops - no randomness
+  const rainDrops = [
+    { id: 0, delay: 0.5, left: '10%' },
+    { id: 1, delay: 1.2, left: '25%' },
+    { id: 2, delay: 0.8, left: '40%' },
+    { id: 3, delay: 1.8, left: '60%' },
+    { id: 4, delay: 0.3, left: '75%' },
+    { id: 5, delay: 2.1, left: '90%' },
+    { id: 6, delay: 1.5, left: '15%' },
+    { id: 7, delay: 0.9, left: '35%' },
+    { id: 8, delay: 2.4, left: '55%' },
+    { id: 9, delay: 1.1, left: '80%' },
+    // Add more if needed...
+  ]
 
   return (
     <div 

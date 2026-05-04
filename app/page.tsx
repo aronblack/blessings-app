@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
-import { Rain, TeardropSVG } from '../components/effects'
+import NoSSR from '@/components/NoSSR'
+import { Rain, TeardropSVG, Hell } from '../components/effects'
 import SubscriptionForm from '../components/SubscriptionForm'
 import ShareButtons from '../components/ShareButtons'
 
@@ -12,12 +13,14 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showRain, setShowRain] = useState(false)
+  const [showHell, setShowHell] = useState(false)
   const [showSubscription, setShowSubscription] = useState(false)
   const [subscribed, setSubscribed] = useState(false)
 
   useEffect(() => {
-    const hasOne = code.includes('1')
-    setShowRain(hasOne)
+    setShowRain(code.includes('1'))
+    // Show hell only for exactly 4 digits containing 666
+    setShowHell(/^\d{4}$/.test(code) && /666/.test(code))
   }, [code])
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -64,10 +67,15 @@ export default function Home() {
 
   return (
     <main className='min-h-dvh flex items-center justify-center p-6 relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100'>
-      {/* Rain Effect - pushed further back */}
-      <div className="absolute inset-0 z-0">
+      {/* Hell Effect */}
+      <NoSSR fallback={null}>
+        <Hell show={showHell} />
+      </NoSSR>
+
+      {/* Rain Effect */}
+      <NoSSR fallback={<div className="fixed inset-0 pointer-events-none overflow-hidden z-0" />}>
         <Rain showRain={showRain} />
-      </div>
+      </NoSSR>
       
       {/* Background Teardrops - pushed much further back with lower opacity */}
       <TeardropSVG className="absolute top-20 left-20 opacity-2 rotate-12 -z-10 scale-150 blur-[1px]" fill="rgba(156, 163, 175, 0.05)" />
@@ -123,8 +131,10 @@ export default function Home() {
               {blessing}
             </ReactMarkdown>
             
-            {/* Remove the url prop - let ShareButtons handle it internally */}
-            <ShareButtons blessing={blessing} />
+            {/* Wrap ShareButtons in NoSSR too */}
+            <NoSSR>
+              <ShareButtons blessing={blessing} />
+            </NoSSR>
           </div>
         )}
 
