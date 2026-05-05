@@ -7,8 +7,34 @@ import { Rain, TeardropSVG, Hell } from '../components/effects'
 import SubscriptionForm from '../components/SubscriptionForm'
 import ShareButtons from '../components/ShareButtons'
 
+const blessingCategories = [
+  { value: 'love', label: 'Love' },
+  { value: 'family', label: 'Family' },
+  { value: 'healing', label: 'Healing' },
+  { value: 'protection', label: 'Protection' },
+  { value: 'work', label: 'Work' },
+  { value: 'courage', label: 'Courage' },
+  { value: 'money', label: 'Money' },
+  { value: 'new beginning', label: 'New beginning' },
+  { value: 'grief / comfort', label: 'Grief / comfort' },
+  { value: 'gratitude', label: 'Gratitude' }
+] as const
+
+const cardBackgrounds = [
+  { id: 'heaven',   label: 'Heaven',    src: '/heaven1.png' },
+  { id: 'forest',   label: 'Forest',    src: '/forest.png' },
+  { id: 'ocean',    label: 'Ocean',     src: '/ocean.png' },
+  { id: 'stars',    label: 'Stars',     src: '/nightscape.png' },
+  { id: 'hell',     label: 'Hellscape', src: '/hell-bkgrnd.png' },
+  { id: 'sacred',   label: 'Sacred',    src: '/sacred-geometry.png' },
+  { id: 'minimal',  label: 'Minimal',   src: '/black-white.png' },
+] as const
+
 export default function Home() {
   const [code, setCode] = useState('')
+  const [category, setCategory] = useState('')
+  const [sessionId, setSessionId] = useState('')
+  const [cardBg, setCardBg] = useState<typeof cardBackgrounds[number]['src']>('/heaven1.png')
   const [blessing, setBlessing] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -19,9 +45,49 @@ export default function Home() {
 
   useEffect(() => {
     setShowRain(code.includes('1'))
-    // Show hell only for exactly 4 digits containing 666
-    setShowHell(/^\d{4}$/.test(code) && /666/.test(code))
+    setShowHell(code.includes('666'))
   }, [code])
+
+  useEffect(() => {
+    const key = 'blessing_session_id'
+    const existing = window.localStorage.getItem(key)
+    if (existing) {
+      setSessionId(existing)
+      return
+    }
+
+    const generated =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `sess-${Math.random().toString(36).slice(2)}-${Date.now()}`
+
+    window.localStorage.setItem(key, generated)
+    setSessionId(generated)
+  }, [])
+
+  const requestBlessing = async (payload: {
+    code?: string
+    category?: string
+    daily?: boolean
+    sessionId?: string
+  }) => {
+    const res = await fetch('/api/blessing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.includes('application/json')) {
+      throw new Error(`Unexpected response (${res.status})`)
+    }
+
+    const data: { blessing?: string; error?: string } = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Something went wrong')
+
+    setBlessing(data.blessing ?? null)
+    setTimeout(() => setShowSubscription(true), 3000)
+  }
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -35,23 +101,30 @@ export default function Home() {
 
     setLoading(true)
     try {
-      const res = await fetch('/api/blessing', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code })
+      await requestBlessing({
+        code,
+        category: category || undefined,
+        sessionId: sessionId || undefined
       })
-      
-      const contentType = res.headers.get('content-type') || ''
-      if (!contentType.includes('application/json')) {
-        throw new Error(`Unexpected response (${res.status})`)
-      }
-      
-      const data: { blessing?: string; error?: string } = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Something went wrong')
-      
-      setBlessing(data.blessing ?? null)
-      // Show subscription form after receiving a blessing
-      setTimeout(() => setShowSubscription(true), 3000)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Something went wrong'
+      setError(msg)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const onDailyBlessing = async () => {
+    setError(null)
+    setBlessing(null)
+    setLoading(true)
+
+    try {
+      await requestBlessing({
+        daily: true,
+        category: category || undefined,
+        sessionId: sessionId || undefined
+      })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Something went wrong'
       setError(msg)
@@ -66,7 +139,7 @@ export default function Home() {
   }
 
   return (
-    <main className='min-h-dvh flex items-center justify-center p-6 relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100'>
+    <main className='min-h-dvh flex items-center justify-center p-6 relative overflow-hidden'>
       {/* Hell Effect */}
       <NoSSR fallback={null}>
         <Hell show={showHell} />
@@ -85,11 +158,40 @@ export default function Home() {
       
       {/* Floating form container */}
       <div className='w-full max-w-md space-y-6 relative z-30 transform hover:scale-[1.01] transition-transform duration-300'>
-        <h1 className='text-3xl font-light text-center text-gray-800 tracking-wide mb-8'>Receive a Blessing</h1>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src='/gates2.png' alt='Gates' className='mx-auto mb-[3px]' />
         
         {/* Main form with enhanced floating effect */}
-        <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8 transform transition-all duration-300 hover:shadow-3xl">
+        <div className="relative group">
+          {/* Left wing */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src='/angel-wing.png'
+            alt=''
+            className='pointer-events-none absolute left-0 top-1/2 z-[1] hidden w-96 -translate-x-[calc(70%+6px)] -translate-y-1/2 opacity-90 transition-all duration-300 drop-shadow-[0_0_14px_rgba(255,255,255,0.35)] [filter:sepia(0.18)_saturate(1.15)_brightness(1.08)] md:block'
+          />
+          {/* Right wing */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src='/angel-wing.png'
+            alt=''
+            className='pointer-events-none absolute right-0 top-1/2 z-[1] hidden w-96 translate-x-[calc(70%+6px)] -translate-y-1/2 scale-x-[-1] opacity-90 transition-all duration-300 drop-shadow-[0_0_14px_rgba(255,255,255,0.35)] [filter:sepia(0.18)_saturate(1.15)_brightness(1.08)] md:block'
+          />
+          <div className="relative z-10 bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8 transform transition-all duration-300 group-hover:shadow-3xl">
           <form onSubmit={onSubmit} className='space-y-4'>
+            <select
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              className='w-full rounded-xl border border-gray-200/50 px-4 py-3 bg-white/70 backdrop-blur-sm focus:border-gray-300 focus:ring-2 focus:ring-gray-200/50 transition-all text-gray-700 shadow-sm'
+              aria-label='Choose blessing category'
+            >
+              <option value=''>Choose a blessing type (optional)</option>
+              {blessingCategories.map(item => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
             <input
               inputMode='numeric'
               pattern='\d{4}'
@@ -109,6 +211,14 @@ export default function Home() {
             >
               {loading ? 'Receiving Blessing...' : 'Receive Blessing'}
             </button>
+            <button
+              type='button'
+              onClick={onDailyBlessing}
+              disabled={loading}
+              className='w-full rounded-xl bg-white text-gray-800 py-3 font-medium border border-gray-200 disabled:opacity-60 hover:bg-gray-50 transition-all shadow-sm hover:shadow-md transform hover:scale-[1.02] active:scale-[0.98]'
+            >
+              {loading ? 'Receiving Blessing...' : 'Today\'s Blessing'}
+            </button>
           </form>
 
           {error && (
@@ -116,25 +226,54 @@ export default function Home() {
               {error}
             </div>
           )}
+          </div>
         </div>
         
-        {/* Blessing display with floating effect and share buttons */}
+        {/* Blessing card with background picker */}
         {blessing && (
-          <div className='rounded-2xl border border-gray-200/30 p-6 bg-white/85 backdrop-blur-lg shadow-2xl transform transition-all duration-500 hover:shadow-3xl animate-in slide-in-from-bottom-4'>
-            <ReactMarkdown
-              components={{
-                p: ({ children }) => <p className='mb-3 last:mb-0 leading-relaxed text-gray-800 text-base'>{children}</p>,
-                strong: ({ children }) => <strong className='font-semibold text-gray-900'>{children}</strong>,
-                em: ({ children }) => <em className='italic text-gray-700'>{children}</em>,
-              }}
+          <div className='space-y-3 animate-in slide-in-from-bottom-4 duration-500'>
+            {/* Background picker */}
+            <div className='flex gap-2 justify-center flex-wrap'>
+              {cardBackgrounds.map(bg => (
+                <button
+                  key={bg.id}
+                  onClick={() => setCardBg(bg.src)}
+                  title={bg.label}
+                  className={`w-9 h-9 rounded-lg overflow-hidden border-2 transition-all hover:scale-110 ${
+                    cardBg === bg.src ? 'border-gray-800 shadow-lg scale-110' : 'border-transparent'
+                  }`}
+                >
+                  <img src={bg.src} alt={bg.label} className='w-full h-full object-cover' />
+                </button>
+              ))}
+            </div>
+
+            {/* Styled blessing card */}
+            <div
+              className='relative rounded-2xl overflow-hidden shadow-2xl min-h-[220px] flex flex-col justify-center'
+              style={{ backgroundImage: `url(${cardBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
             >
-              {blessing}
-            </ReactMarkdown>
-            
-            {/* Wrap ShareButtons in NoSSR too */}
-            <NoSSR>
-              <ShareButtons blessing={blessing} />
-            </NoSSR>
+              {/* Overlay */}
+              <div className='absolute inset-0 bg-black/50 backdrop-blur-[2px]' />
+              {/* Text */}
+              <div className='relative z-10 p-8'>
+                <ReactMarkdown
+                  components={{
+                    p: ({ children }) => <p className='mb-3 last:mb-0 leading-relaxed text-white text-base drop-shadow-md'>{children}</p>,
+                    strong: ({ children }) => <strong className='font-semibold text-white'>{children}</strong>,
+                    em: ({ children }) => <em className='italic text-white/90'>{children}</em>,
+                  }}
+                >
+                  {blessing}
+                </ReactMarkdown>
+              </div>
+              {/* Share buttons inside card */}
+              <div className='relative z-10 px-8 pb-6'>
+                <NoSSR>
+                  <ShareButtons blessing={blessing} cardBg={cardBg} />
+                </NoSSR>
+              </div>
+            </div>
           </div>
         )}
 

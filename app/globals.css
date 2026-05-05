@@ -20,7 +20,7 @@
 }
 
 body {
-  background: var(--background);
+  background: url('/clouds.png') center center / cover no-repeat fixed;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }

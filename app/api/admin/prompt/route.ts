@@ -1,23 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase =
-  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    ? createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      )
-    : null
-
-// Simple auth check
-function isAuthorized(req: NextRequest) {
-  const adminKey = req.headers.get('x-admin-key')
-  return adminKey === process.env.ADMIN_KEY
-}
+import { isAuthorized, supabase, unauthorized } from '../_shared'
 
 export async function GET(req: NextRequest) {
   if (!isAuthorized(req)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorized()
   }
 
   if (!supabase) {
@@ -42,7 +28,7 @@ Keep it non-denominational, uplifting, and safe for all audiences.`
 
 export async function POST(req: NextRequest) {
   if (!isAuthorized(req)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorized()
   }
 
   if (!supabase) {
