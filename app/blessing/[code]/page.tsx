@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getCodeMeaning, getAllSpecialCodes } from '@/lib/codeMeanings'
-import BlessingCardClient from './BlessingCardClient'
+import BlessingCardClient, { ShareLink } from './BlessingCardClient'
 
 interface Props {
   params: Promise<{ code: string }>
@@ -103,7 +103,7 @@ export default async function CodePage({ params }: Props) {
         {/* Share link */}
         <section className='text-center'>
           <p className='text-sm text-gray-500 mb-3'>Share this page</p>
-          <BlessingCardClient.ShareLink code={code} />
+          <ShareLink code={code} />
         </section>
 
         {/* Explore other codes */}

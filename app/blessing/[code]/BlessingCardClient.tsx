@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MarkdownHooks as ReactMarkdown } from 'react-markdown'
+import ReactMarkdown from 'react-markdown'
 import ShareButtons from '@/components/ShareButtons'
 import NoSSR from '@/components/NoSSR'
 
@@ -112,6 +112,6 @@ function ShareLink({ code }: { code: string }) {
   )
 }
 
-BlessingCardClient.ShareLink = ShareLink
+export { ShareLink }
 
 export default BlessingCardClient
