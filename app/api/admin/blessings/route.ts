@@ -12,6 +12,11 @@ interface BlessingRow {
   blocked?: boolean | null
 }
 
+interface UsageSummary {
+  usageCount: number
+  mostUsedCodes: Array<{ code: string; count: number }>
+}
+
 async function fetchBlessings(limit: number): Promise<BlessingRow[]> {
   if (!supabase) return []
 
@@ -34,6 +39,48 @@ async function fetchBlessings(limit: number): Promise<BlessingRow[]> {
   return (fallback.data as BlessingRow[]) || []
 }
 
+async function fetchUsageSummary(maxRows = 5000): Promise<UsageSummary> {
+  if (!supabase) {
+    return { usageCount: 0, mostUsedCodes: [] }
+  }
+
+  const usageMap = new Map<string, number>()
+  const pageSize = 1000
+  let offset = 0
+  let scanned = 0
+
+  while (scanned < maxRows) {
+    const { data, error } = await supabase
+      .from('blessings')
+      .select('code')
+      .range(offset, offset + pageSize - 1)
+
+    if (error || !data?.length) break
+
+    for (const row of data as Array<{ code?: string | null }>) {
+      const code = (row.code || '').trim()
+      if (!code) continue
+      usageMap.set(code, (usageMap.get(code) || 0) + 1)
+    }
+
+    scanned += data.length
+    if (data.length < pageSize) break
+    offset += pageSize
+  }
+
+  const countRes = await supabase
+    .from('blessings')
+    .select('code', { count: 'exact', head: true })
+
+  const usageCount = countRes.count ?? scanned
+  const mostUsedCodes = Array.from(usageMap.entries())
+    .map(([code, count]) => ({ code, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10)
+
+  return { usageCount, mostUsedCodes }
+}
+
 export async function GET(req: NextRequest) {
   if (!isAuthorized(req)) return unauthorized()
   if (!supabase) {
@@ -48,19 +95,12 @@ export async function GET(req: NextRequest) {
       : 100
 
     const rows = await fetchBlessings(limit)
+    const usage = await fetchUsageSummary()
 
-    const usageMap = new Map<string, number>()
-    for (const row of rows) {
-      usageMap.set(row.code, (usageMap.get(row.code) || 0) + 1)
-    }
-
-    const usageCount = rows.length
+    const usageCount = usage.usageCount
     const blockedCount = rows.filter(r => r.blocked).length
     const approvedCount = rows.filter(r => r.approved).length
-    const mostUsedCodes = Array.from(usageMap.entries())
-      .map(([code, count]) => ({ code, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10)
+    const mostUsedCodes = usage.mostUsedCodes
 
     return NextResponse.json({
       blessings: rows,
