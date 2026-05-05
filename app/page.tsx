@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import ReactMarkdown from 'react-markdown'
+import { MarkdownHooks as ReactMarkdown } from 'react-markdown'
 import NoSSR from '@/components/NoSSR'
 import { Rain, TeardropSVG, Hell } from '../components/effects'
 import SubscriptionForm from '../components/SubscriptionForm'

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import ReactMarkdown from 'react-markdown'
+import { MarkdownHooks as ReactMarkdown } from 'react-markdown'
 import ShareButtons from '@/components/ShareButtons'
 import NoSSR from '@/components/NoSSR'
 
