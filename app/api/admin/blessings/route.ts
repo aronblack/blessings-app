@@ -17,8 +17,33 @@ interface UsageSummary {
   mostUsedCodes: Array<{ code: string; count: number }>
 }
 
-async function fetchBlessings(limit: number): Promise<BlessingRow[]> {
-  if (!supabase) return []
+interface BlessingsResult {
+  rows: BlessingRow[]
+  hadError: boolean
+}
+
+interface UsageSummaryResult extends UsageSummary {
+  hadError: boolean
+}
+
+function summarizeFromRows(rows: BlessingRow[]): UsageSummary {
+  const usageMap = new Map<string, number>()
+  for (const row of rows) {
+    const code = (row.code || '').trim()
+    if (!code) continue
+    usageMap.set(code, (usageMap.get(code) || 0) + 1)
+  }
+
+  const mostUsedCodes = Array.from(usageMap.entries())
+    .map(([code, count]) => ({ code, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10)
+
+  return { usageCount: rows.length, mostUsedCodes }
+}
+
+async function fetchBlessings(limit: number): Promise<BlessingsResult> {
+  if (!supabase) return { rows: [], hadError: true }
 
   const preferred = await supabase
     .from('blessings')
@@ -27,7 +52,7 @@ async function fetchBlessings(limit: number): Promise<BlessingRow[]> {
     .limit(limit)
 
   if (!preferred.error && preferred.data) {
-    return preferred.data as BlessingRow[]
+    return { rows: preferred.data as BlessingRow[], hadError: false }
   }
 
   const fallback = await supabase
@@ -36,12 +61,14 @@ async function fetchBlessings(limit: number): Promise<BlessingRow[]> {
     .order('created_at', { ascending: false })
     .limit(limit)
 
-  return (fallback.data as BlessingRow[]) || []
+  if (fallback.error) return { rows: [], hadError: true }
+
+  return { rows: (fallback.data as BlessingRow[]) || [], hadError: false }
 }
 
-async function fetchUsageSummary(maxRows = 5000): Promise<UsageSummary> {
+async function fetchUsageSummary(maxRows = 5000): Promise<UsageSummaryResult> {
   if (!supabase) {
-    return { usageCount: 0, mostUsedCodes: [] }
+    return { usageCount: 0, mostUsedCodes: [], hadError: true }
   }
 
   const usageMap = new Map<string, number>()
@@ -55,7 +82,9 @@ async function fetchUsageSummary(maxRows = 5000): Promise<UsageSummary> {
       .select('code')
       .range(offset, offset + pageSize - 1)
 
-    if (error || !data?.length) break
+    if (error) return { usageCount: 0, mostUsedCodes: [], hadError: true }
+
+    if (!data?.length) break
 
     for (const row of data as Array<{ code?: string | null }>) {
       const code = (row.code || '').trim()
@@ -72,19 +101,32 @@ async function fetchUsageSummary(maxRows = 5000): Promise<UsageSummary> {
     .from('blessings')
     .select('code', { count: 'exact', head: true })
 
+  if (countRes.error) {
+    return { usageCount: scanned, mostUsedCodes: [], hadError: true }
+  }
+
   const usageCount = countRes.count ?? scanned
   const mostUsedCodes = Array.from(usageMap.entries())
     .map(([code, count]) => ({ code, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 10)
 
-  return { usageCount, mostUsedCodes }
+  return { usageCount, mostUsedCodes, hadError: false }
 }
 
 export async function GET(req: NextRequest) {
   if (!isAuthorized(req)) return unauthorized()
   if (!supabase) {
-    return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+    return NextResponse.json({
+      blessings: [],
+      summary: {
+        usageCount: 0,
+        approvedCount: 0,
+        blockedCount: 0,
+        mostUsedCodes: []
+      },
+      warning: 'Database not configured. Add Supabase env vars to load admin stats.'
+    })
   }
 
   try {
@@ -94,13 +136,19 @@ export async function GET(req: NextRequest) {
       ? Math.max(1, Math.min(500, limitRaw))
       : 100
 
-    const rows = await fetchBlessings(limit)
+    const blessingsResult = await fetchBlessings(limit)
+    const rows = blessingsResult.rows
     const usage = await fetchUsageSummary()
+    const fallback = summarizeFromRows(rows)
 
-    const usageCount = usage.usageCount
+    const usingFallback = usage.usageCount === 0 && usage.mostUsedCodes.length === 0 && rows.length > 0
+    const partialData = blessingsResult.hadError || usage.hadError
+
+    const usageCount = usingFallback ? fallback.usageCount : usage.usageCount
     const blockedCount = rows.filter(r => r.blocked).length
     const approvedCount = rows.filter(r => r.approved).length
-    const mostUsedCodes = usage.mostUsedCodes
+    const mostUsedCodes = usingFallback ? fallback.mostUsedCodes : usage.mostUsedCodes
+    const noData = usageCount === 0 && rows.length === 0
 
     return NextResponse.json({
       blessings: rows,
@@ -109,11 +157,25 @@ export async function GET(req: NextRequest) {
         approvedCount,
         blockedCount,
         mostUsedCodes
-      }
+      },
+      warning: partialData || usingFallback
+        ? 'Stats are partial because database queries are restricted. Add SUPABASE_SERVICE_ROLE_KEY for full admin metrics.'
+        : noData
+          ? 'No submissions found yet. Generate a blessing to start tracking usage.'
+          : undefined
     })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to load blessings'
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json({
+      blessings: [],
+      summary: {
+        usageCount: 0,
+        approvedCount: 0,
+        blockedCount: 0,
+        mostUsedCodes: []
+      },
+      warning: `Unable to load full stats: ${message}`
+    })
   }
 }
 

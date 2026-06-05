@@ -94,7 +94,7 @@ export default function AdminPage() {
       setBlessings(blessingsData.blessings || [])
       setSummary(blessingsData.summary || { usageCount: 0, approvedCount: 0, blockedCount: 0, mostUsedCodes: [] })
       setSpecialCodes(specialData.specialCodes || [])
-      setMessage('Dashboard loaded')
+      setMessage(blessingsData.warning || 'Dashboard loaded')
     } catch {
       setMessage('Failed to load dashboard')
     } finally {

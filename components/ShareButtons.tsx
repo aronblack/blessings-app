@@ -1,10 +1,13 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { Locale, shareText } from '@/lib/i18n'
 
 interface ShareButtonsProps {
   blessing: string
   cardBg?: string // path to background image, e.g. '/heaven1.png'
+  locale?: Locale
+  labels?: (typeof shareText)[Locale]
 }
 
 declare global {
@@ -16,7 +19,8 @@ declare global {
   }
 }
 
-export default function ShareButtons({ blessing, cardBg }: ShareButtonsProps) {
+export default function ShareButtons({ blessing, cardBg, locale = 'en', labels }: ShareButtonsProps) {
+  const t = labels || shareText[locale]
   const [copied, setCopied] = useState(false)
   const [downloaded, setDownloaded] = useState(false)
   const [shareUrl, setShareUrl] = useState('')
@@ -53,8 +57,8 @@ export default function ShareButtons({ blessing, cardBg }: ShareButtonsProps) {
     }
   }, [])
 
-  const shareText = `Today's blessing: "${blessing}" ✨ #DailyBlessings #Blessed`
-  const fullShareText = `${shareText}\n\nGet your own blessing at: ${shareUrl}`
+  const shareMessage = `${t.blessingPrefix}: "${blessing}" ✨ #DailyBlessings #Blessed`
+  const fullShareText = `${shareMessage}\n\n${shareUrl}`
 
   // ── Copy ──────────────────────────────────────────────────────────────────
   const handleCopy = async () => {
@@ -76,7 +80,7 @@ export default function ShareButtons({ blessing, cardBg }: ShareButtonsProps) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
-      console.error('Failed to copy:', err)
+      console.error(t.copyFailed, err)
     }
   }
 
@@ -84,7 +88,7 @@ export default function ShareButtons({ blessing, cardBg }: ShareButtonsProps) {
   const handleShare = async () => {
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
-        await navigator.share({ title: 'A Blessing for You', text: shareText, url: shareUrl })
+        await navigator.share({ title: t.webShareTitle, text: shareMessage, url: shareUrl })
       } catch {
         // user cancelled — do nothing
       }
@@ -190,9 +194,9 @@ export default function ShareButtons({ blessing, cardBg }: ShareButtonsProps) {
   // ── Social helpers ────────────────────────────────────────────────────────
   const shareOnFacebook = () => {
     if (window.FB && fbLoaded) {
-      window.FB.ui({ method: 'feed', href: shareUrl, quote: shareText },
+      window.FB.ui({ method: 'feed', href: shareUrl, quote: shareMessage },
         function(response: { [key: string]: unknown; status: string }) {
-          if (!response || 'error_code' in response) console.log('Facebook share cancelled.')
+          if (!response || 'error_code' in response) console.log(t.fbCancelledLog)
         })
     } else {
       window.open(`https://www.facebook.com/intent/post/?text=${encodeURIComponent(fullShareText)}`, '_blank', 'width=626,height=436')
@@ -200,7 +204,7 @@ export default function ShareButtons({ blessing, cardBg }: ShareButtonsProps) {
   }
 
   const shareOnTwitter = () => {
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, 'twitter-share-dialog', 'width=626,height=436')
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareMessage)}&url=${encodeURIComponent(shareUrl)}`, 'twitter-share-dialog', 'width=626,height=436')
   }
 
   const shareOnWhatsApp = () => {
@@ -208,14 +212,14 @@ export default function ShareButtons({ blessing, cardBg }: ShareButtonsProps) {
   }
 
   const shareOnLinkedIn = () => {
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}&summary=${encodeURIComponent(shareText)}`, 'linkedin-share-dialog', 'width=626,height=436')
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}&summary=${encodeURIComponent(shareMessage)}`, 'linkedin-share-dialog', 'width=626,height=436')
   }
 
   const disabled = !isClient || !shareUrl
 
   return (
     <div className="mt-5 pt-5 border-t border-gray-100 space-y-4">
-      <p className="text-sm font-medium text-gray-700 text-center tracking-wide">Share this blessing</p>
+      <p className="text-sm font-medium text-gray-700 text-center tracking-wide">{t.shareThisBlessing}</p>
 
       {/* Primary actions */}
       <div className="flex justify-center gap-2 flex-wrap">
@@ -224,14 +228,14 @@ export default function ShareButtons({ blessing, cardBg }: ShareButtonsProps) {
           onClick={handleCopy}
           disabled={disabled}
           className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 text-white rounded-xl hover:bg-gray-700 transition-all shadow-sm hover:shadow-md text-sm font-medium disabled:opacity-50"
-          aria-label="Copy blessing"
+          aria-label={t.copyBlessingAria}
         >
           {copied ? (
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           ) : (
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
           )}
-          {copied ? 'Copied!' : 'Copy'}
+          {copied ? t.copied : t.copy}
         </button>
 
         {/* Send to a friend (Web Share API) */}
@@ -239,10 +243,10 @@ export default function ShareButtons({ blessing, cardBg }: ShareButtonsProps) {
           onClick={handleShare}
           disabled={disabled}
           className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition-all shadow-sm hover:shadow-md text-sm font-medium disabled:opacity-50"
-          aria-label="Send to a friend"
+          aria-label={t.sendToFriendAria}
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          Send to a friend
+          {t.sendToFriend}
         </button>
 
         {/* Download as image */}
@@ -250,20 +254,20 @@ export default function ShareButtons({ blessing, cardBg }: ShareButtonsProps) {
           onClick={handleDownload}
           disabled={disabled}
           className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-500 transition-all shadow-sm hover:shadow-md text-sm font-medium disabled:opacity-50"
-          aria-label="Download as image"
+          aria-label={t.downloadImageAria}
         >
           {downloaded ? (
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           ) : (
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           )}
-          {downloaded ? 'Saved!' : 'Download image'}
+          {downloaded ? t.saved : t.downloadImage}
         </button>
       </div>
 
       {/* Social icons */}
       <div className="flex justify-center items-center gap-3">
-        <span className="text-xs text-gray-400">or share on</span>
+        <span className="text-xs text-gray-400">{t.orShareOn}</span>
         {/* Facebook */}
         <button onClick={shareOnFacebook} disabled={disabled} aria-label="Share on Facebook"
           className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all disabled:opacity-50">

@@ -1,12 +1,15 @@
 'use client'
 
 import { useState } from 'react'
+import { type Locale, subscriptionText } from '@/lib/i18n'
 
 interface SubscriptionFormProps {
   onSuccess: () => void
+  labels?: (typeof subscriptionText)[Locale]
+  genericError?: string
 }
 
-export default function SubscriptionForm({ onSuccess }: SubscriptionFormProps) {
+export default function SubscriptionForm({ onSuccess, labels = subscriptionText.en, genericError = 'Something went wrong' }: SubscriptionFormProps) {
   const [email, setEmail] = useState('')
   const [mobile, setMobile] = useState('')
   const [loading, setLoading] = useState(false)
@@ -25,11 +28,11 @@ export default function SubscriptionForm({ onSuccess }: SubscriptionFormProps) {
       })
 
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to subscribe')
+      if (!res.ok) throw new Error(data.error || labels.subscribeFailed)
 
       onSuccess()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Something went wrong'
+      const msg = err instanceof Error ? err.message : genericError
       setError(msg)
     } finally {
       setLoading(false)
@@ -39,7 +42,7 @@ export default function SubscriptionForm({ onSuccess }: SubscriptionFormProps) {
   return (
     <div className="bg-white/95 backdrop-blur-sm rounded-lg border border-gray-200 p-6 shadow-lg">
       <h2 className="text-xl font-light text-gray-800 mb-4 text-center">
-        Receive Daily Blessings
+        {labels.title}
       </h2>
       
       <form onSubmit={onSubmit} className="space-y-4">
@@ -47,7 +50,7 @@ export default function SubscriptionForm({ onSuccess }: SubscriptionFormProps) {
           type="email"
           value={email}
           onChange={e => setEmail(e.target.value)}
-          placeholder="Your email address"
+          placeholder={labels.emailPlaceholder}
           required
           className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white/90 backdrop-blur-sm focus:border-gray-300 focus:ring-2 focus:ring-gray-200 transition-all text-gray-700 placeholder:text-gray-400"
         />
@@ -56,7 +59,7 @@ export default function SubscriptionForm({ onSuccess }: SubscriptionFormProps) {
           type="tel"
           value={mobile}
           onChange={e => setMobile(e.target.value)}
-          placeholder="Your mobile number (optional)"
+          placeholder={labels.mobilePlaceholder}
           className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white/90 backdrop-blur-sm focus:border-gray-300 focus:ring-2 focus:ring-gray-200 transition-all text-gray-700 placeholder:text-gray-400"
         />
         
@@ -65,7 +68,7 @@ export default function SubscriptionForm({ onSuccess }: SubscriptionFormProps) {
           disabled={loading}
           className="w-full rounded-lg bg-gray-800 text-white py-3 font-medium disabled:opacity-60 hover:bg-gray-700 transition-all shadow-md hover:shadow-lg"
         >
-          {loading ? 'Subscribing...' : 'Subscribe to Daily Blessings'}
+          {loading ? labels.subscribing : labels.subscribe}
         </button>
       </form>
 

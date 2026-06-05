@@ -4,23 +4,16 @@ import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import ShareButtons from '@/components/ShareButtons'
 import NoSSR from '@/components/NoSSR'
-
-const cardBackgrounds = [
-  { id: 'heaven',  label: 'Heaven',    src: '/heaven1.png' },
-  { id: 'forest',  label: 'Forest',    src: '/forest.png' },
-  { id: 'ocean',   label: 'Ocean',     src: '/ocean.png' },
-  { id: 'stars',   label: 'Stars',     src: '/nightscape.png' },
-  { id: 'hell',    label: 'Hellscape', src: '/hell-bkgrnd.png' },
-  { id: 'sacred',  label: 'Sacred',    src: '/sacred-geometry.png' },
-  { id: 'minimal', label: 'Minimal',   src: '/black-white.png' },
-] as const
+import { getLocalizedCardBackgrounds, type Locale, shareText, uiText } from '@/lib/i18n'
 
 interface Props {
   blessing: string
   defaultBg: string
+  locale?: Locale
 }
 
-function BlessingCardClient({ blessing, defaultBg }: Props) {
+function BlessingCardClient({ blessing, defaultBg, locale = 'en' }: Props) {
+  const cardBackgrounds = getLocalizedCardBackgrounds(locale)
   const [cardBg, setCardBg] = useState(defaultBg)
 
   return (
@@ -61,7 +54,7 @@ function BlessingCardClient({ blessing, defaultBg }: Props) {
         </div>
         <div className='relative z-10 px-8 pb-6'>
           <NoSSR>
-            <ShareButtons blessing={blessing} cardBg={cardBg} />
+            <ShareButtons blessing={blessing} cardBg={cardBg} locale={locale} labels={shareText[locale]} />
           </NoSSR>
         </div>
       </div>
@@ -70,11 +63,12 @@ function BlessingCardClient({ blessing, defaultBg }: Props) {
 }
 
 // ── Share link sub-component ──────────────────────────────────────────────────
-function ShareLink({ code }: { code: string }) {
+function ShareLink({ code, locale = 'en' }: { code: string; locale?: Locale }) {
   const [copied, setCopied] = useState(false)
+  const t = uiText[locale]
 
   const handleCopy = () => {
-    const url = `${window.location.origin}/blessing/${code}`
+    const url = `${window.location.origin}/${locale}/blessing/${code}`
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(url).then(() => {
         setCopied(true)
@@ -106,7 +100,7 @@ function ShareLink({ code }: { code: string }) {
         ) : (
           <svg width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8'/><polyline points='16 6 12 2 8 6'/><line x1='12' y1='2' x2='12' y2='15'/></svg>
         )}
-        {copied ? 'Link copied!' : `Copy link to /blessing/${code}`}
+        {copied ? t.linkCopied : `${t.copyLink} /${locale}/blessing/${code}`}
       </button>
     </NoSSR>
   )
