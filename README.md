@@ -28,6 +28,7 @@ Open http://localhost:3000.
 
 - `OPENAI_API_KEY` (required): used by `app/api/blessing/route.ts` to generate blessings.
 - `OPENAI_MODEL` (optional): defaults to `gpt-4o-mini`.
+- `NEXT_PUBLIC_GA_MEASUREMENT_ID` (optional): enables Google Analytics 4 tracking.
 - `NEXT_PUBLIC_SUPABASE_URL` (optional): enables Supabase prompt/history features.
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (optional): enables Supabase prompt/history features.
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (legacy fallback): also supported for older setups.
