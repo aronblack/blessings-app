@@ -12,6 +12,7 @@ interface SubscriptionFormProps {
 export default function SubscriptionForm({ onSuccess, labels = subscriptionText.en, genericError = 'Something went wrong' }: SubscriptionFormProps) {
   const [email, setEmail] = useState('')
   const [mobile, setMobile] = useState('')
+  const [website, setWebsite] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -24,7 +25,7 @@ export default function SubscriptionForm({ onSuccess, labels = subscriptionText.
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, mobile })
+        body: JSON.stringify({ email, mobile, website })
       })
 
       const data = await res.json()
@@ -61,6 +62,16 @@ export default function SubscriptionForm({ onSuccess, labels = subscriptionText.
           onChange={e => setMobile(e.target.value)}
           placeholder={labels.mobilePlaceholder}
           className="w-full rounded-lg border border-gray-200 px-4 py-3 bg-white/90 backdrop-blur-sm focus:border-gray-300 focus:ring-2 focus:ring-gray-200 transition-all text-gray-700 placeholder:text-gray-400"
+        />
+
+        <input
+          type='text'
+          value={website}
+          onChange={e => setWebsite(e.target.value)}
+          tabIndex={-1}
+          autoComplete='off'
+          className='hidden'
+          aria-hidden='true'
         />
         
         <button

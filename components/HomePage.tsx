@@ -35,6 +35,8 @@ export default function HomePage({ locale }: Props) {
   const [showHell, setShowHell] = useState(false)
   const [showSubscription, setShowSubscription] = useState(false)
   const [subscribed, setSubscribed] = useState(false)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null)
 
   useEffect(() => {
     setShowRain(code.includes('1'))
@@ -56,6 +58,17 @@ export default function HomePage({ locale }: Props) {
 
     window.localStorage.setItem(key, generated)
     setSessionId(generated)
+  }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const checkoutState = params.get('checkout')
+
+    if (checkoutState === 'success') {
+      setCheckoutMessage('Premium activated! Check your inbox for your Stripe receipt.')
+    } else if (checkoutState === 'cancel') {
+      setCheckoutMessage('Checkout canceled. You can try again anytime.')
+    }
   }, [])
 
   const requestBlessing = async (payload: {
@@ -129,6 +142,39 @@ export default function HomePage({ locale }: Props) {
   const handleSubscriptionSuccess = () => {
     setSubscribed(true)
     setShowSubscription(false)
+  }
+
+  const startPremiumCheckout = async () => {
+    setCheckoutMessage(null)
+    setCheckoutLoading(true)
+
+    try {
+      if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+        window.gtag('event', 'start_checkout', {
+          item_name: 'premium_blessings',
+          page_path: window.location.pathname
+        })
+      }
+
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locale })
+      })
+
+      const data: { url?: string; error?: string } = await res.json()
+
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || 'Unable to start checkout')
+      }
+
+      window.location.href = data.url
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unable to start checkout'
+      setCheckoutMessage(message)
+    } finally {
+      setCheckoutLoading(false)
+    }
   }
 
   return (
@@ -279,6 +325,20 @@ export default function HomePage({ locale }: Props) {
             >
               {labels.wantDailyBlessings}
             </button>
+          </div>
+        )}
+
+        {blessing && (
+          <div className='bg-white/80 backdrop-blur-lg border border-gray-200 rounded-2xl p-4 text-center shadow-lg'>
+            <p className='text-sm text-gray-700'>Unlock Premium Blessings for deeper daily guidance.</p>
+            <button
+              onClick={startPremiumCheckout}
+              disabled={checkoutLoading}
+              className='mt-3 w-full rounded-xl bg-black text-white py-3 font-medium disabled:opacity-60 hover:bg-gray-800 transition-all'
+            >
+              {checkoutLoading ? 'Starting checkout...' : 'Upgrade to Premium'}
+            </button>
+            {checkoutMessage && <p className='mt-2 text-xs text-gray-600'>{checkoutMessage}</p>}
           </div>
         )}
       </div>

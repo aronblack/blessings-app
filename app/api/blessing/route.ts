@@ -5,6 +5,7 @@ import OpenAI from 'openai'
 import { z } from 'zod'
 import { createClient } from '@supabase/supabase-js'
 import { Locale, defaultLocale, getLanguageName, locales } from '@/lib/i18n'
+import { applyRateLimit, getClientIp } from '@/lib/rateLimit'
 
 const blessingCategories = [
   'love',
@@ -172,6 +173,26 @@ async function persistBlessing(params: {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req)
+    const limit = applyRateLimit({
+      key: `blessing:${ip}`,
+      limit: 30,
+      windowMs: 60_000,
+      blockMs: 5 * 60_000
+    })
+
+    if (!limit.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Too many blessing requests. Please wait a few minutes and try again.'
+        },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(limit.retryAfterSeconds) }
+        }
+      )
+    }
+
     const json = await req.json()
     const { code, category, daily, sessionId, locale = defaultLocale } = bodySchema.parse(json)
     const todayCode = new Date().toISOString().slice(0, 10)

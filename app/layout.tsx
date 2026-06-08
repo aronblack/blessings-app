@@ -5,11 +5,12 @@ import GoogleAnalytics from "@/components/GoogleAnalytics";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://getblessed.app'
 
 export const metadata: Metadata = {
   title: "Daily Blessings - Receive a Blessing",
   description: "Receive personalized daily blessings to inspire and uplift your spirit.",
-  metadataBase: new URL(process.env.NODE_ENV === 'production' ? 'https://your-domain.com' : 'http://localhost:3000'),
+  metadataBase: new URL(process.env.NODE_ENV === 'production' ? siteUrl : 'http://localhost:3000'),
   openGraph: {
     title: "Daily Blessings - Get Your Personalized Blessing ✨",
     description: "Discover beautiful, personalized blessings to inspire and uplift your spirit. Get your daily dose of positivity and share it with loved ones.",

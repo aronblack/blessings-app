@@ -20,6 +20,16 @@ export default function LanguageSwitcher({ currentLocale, label }: Props) {
   const searchParams = useSearchParams()
   const query = searchParams.toString()
 
+  const trackLanguageClick = (targetLocale: Locale) => {
+    if (typeof window === 'undefined' || typeof window.gtag !== 'function') return
+
+    window.gtag('event', 'language_switch', {
+      from_locale: currentLocale,
+      to_locale: targetLocale,
+      page_path: pathname
+    })
+  }
+
   return (
     <div className='flex items-center gap-2 text-xs sm:text-sm bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full px-3 py-2 shadow-sm'>
       <span className='text-gray-500'>{label}</span>
@@ -31,6 +41,7 @@ export default function LanguageSwitcher({ currentLocale, label }: Props) {
           <Link
             key={locale}
             href={href}
+            onClick={() => trackLanguageClick(locale)}
             className={`px-2 py-1 rounded-full transition-colors ${
               selected ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'
             }`}
